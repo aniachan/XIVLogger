@@ -101,6 +101,7 @@ namespace XIVLogger
                 if (configuration.checkTime())
                 {
                     log.autoSave();
+                    log.wipeLog();
                     configuration.updateAutosaveTime();
   
                 }
