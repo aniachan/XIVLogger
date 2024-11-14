@@ -1,14 +1,12 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Game.Text;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Linq;
-using Dalamud.Game.Gui;
-using Dalamud.Game;
-using Dalamud.Logging;
+
 
 namespace XIVLogger
 {
@@ -54,10 +52,10 @@ namespace XIVLogger
         public int autoMsgCounter = 0;
 
         [NonSerialized]
-        public DalamudPluginInterface pluginInterface;
+        public IDalamudPluginInterface pluginInterface;
 
 
-        public void Initialize(DalamudPluginInterface pluginInterface)
+        public void Initialize(IDalamudPluginInterface pluginInterface)
         {
             this.pluginInterface = pluginInterface;
 
@@ -316,14 +314,14 @@ namespace XIVLogger
     public class ChatLog
     {
         private List<ChatMessage> log;
-        private DalamudPluginInterface pi;
+        private IDalamudPluginInterface pi;
         private Configuration config;
 
-        private ChatGui chat;
+        private IChatGui chat;
 
         public List<ChatMessage> Log { get => log; }
 
-        public ChatLog(Configuration aConfig, DalamudPluginInterface aPi, ChatGui aChat)
+        public ChatLog(Configuration aConfig, IDalamudPluginInterface aPi, IChatGui aChat)
         {
             log = new List<ChatMessage>();
             config = aConfig;
@@ -389,7 +387,7 @@ namespace XIVLogger
 
                 if (lastN > 0)
                 {
-                    this.chat.PrintChat(new XivChatEntry
+                    this.chat.Print(new XivChatEntry
                     {
                         Message = $"Last {lastN} messages copied to clipboard.",
                         Type = XivChatType.Echo
@@ -397,7 +395,7 @@ namespace XIVLogger
                 }
                 else
                 {
-                    this.chat.PrintChat(new XivChatEntry
+                    this.chat.Print(new XivChatEntry
                     {
                         Message = $"Chat log copied to clipboard.",
                         Type = XivChatType.Echo
@@ -629,7 +627,7 @@ namespace XIVLogger
 
                 if(config.fAutosaveNotif)
                 {
-                    this.chat.PrintChat(new XivChatEntry
+                    this.chat.Print(new XivChatEntry
                     {
                         Message = "Autosaved chat log to " + path + ".",
                         Type = XivChatType.Echo

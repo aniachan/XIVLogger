@@ -2,15 +2,12 @@
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Plugin;
+using Dalamud.Plugin.Services;
 using System;
 using System.Reflection;
 using ImGuiNET;
-using System.Text;
 using Dalamud.IoC;
-using Dalamud.Game.Gui;
-using Dalamud.Game;
-using Dalamud.Logging;
-using Dalamud.Game.ClientState;
+using System.Globalization;
 
 namespace XIVLogger
 {
@@ -21,20 +18,21 @@ namespace XIVLogger
 
         private const string commandName = "/xivlogger";
 
-        [PluginService] private DalamudPluginInterface PluginInterface { get; set; }
-        [PluginService] public ChatGui Chat { get; set; }
-        [PluginService] public Framework framework { get; set; }
-        [PluginService] public ClientState ClientState { get; set; }
-        private CommandManager commandManager { get; init; }
+        [PluginService] private IDalamudPluginInterface PluginInterface { get; set; }
+        [PluginService] public IChatGui Chat { get; set; }
+        [PluginService] public IFramework framework { get; set; }
+        [PluginService] public IClientState ClientState { get; set; }
+        private ICommandManager commandManager { get; init; }
         private Configuration configuration;
         public ChatLog log;
         private PluginUI ui;
+        private readonly IPluginLog pluginLog;
         private bool loggingIn = false;
         private bool loggedIn = false;
 
         public string Location { get; private set; } = Assembly.GetExecutingAssembly().Location;
 
-        public Plugin(CommandManager command)
+        public Plugin(ICommandManager command)
         {            
             this.configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
             this.configuration.Initialize(PluginInterface);
@@ -65,28 +63,27 @@ namespace XIVLogger
             this.ClientState.Login += OnLogin;
             this.ClientState.Logout += OnLogout;
             Chat.ChatMessage += OnChatMessage;
-
             this.framework.Update += OnUpdate;
 
         }
 
-        private void OnLogin(object sender, EventArgs e)
+        private void OnLogin()
         {
             loggingIn = true;
         }
 
-        private void OnLogout(object sender, EventArgs e)
+        private void OnLogout(int type, int code)
         {
             if (configuration.fAutosave && loggedIn)
             {
                 log.autoSave();
                 log.wipeLog();
             }
-            PluginLog.Debug("Logged out!");
+            pluginLog.Debug("Logged out!");
             loggedIn = false;
         }
 
-        private void OnUpdate(Framework framework)
+        private void OnUpdate(IFramework framework)
         {
 
             if (loggingIn && this.ClientState.LocalPlayer != null)
@@ -107,8 +104,11 @@ namespace XIVLogger
 
             }
         }
+        /*
+                     OnMessageDelegate(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled);
 
-        private void OnChatMessage(XivChatType type, uint id, ref SeString sender, ref SeString message, ref bool handled)
+         */
+        private void OnChatMessage(XivChatType type, int id, ref SeString sender, ref SeString message, ref bool handled)
         {
             log.addMessage(type, sender.TextValue, message.TextValue);
 
